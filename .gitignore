@@ -1,0 +1,42 @@
+# Env
+.env
+.env.local
+
+# Go
+gateway/gateway
+gateway/*.exe
+gateway/*.test
+gateway/vendor/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Fine-tune artifacts (large binary files, not committed)
+finetune-service/checkpoints/
+finetune-service/adapters/
+finetune-service/*.safetensors
+finetune-service/*.bin
+
+# Node / Next.js
+dashboard/node_modules/
+dashboard/.next/
+dashboard/out/
+dashboard/.turbo/
+dashboard/npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
