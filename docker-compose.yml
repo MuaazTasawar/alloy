@@ -43,6 +43,14 @@ services:
         condition: service_healthy
     ports:
       - "${RAG_SERVICE_PORT}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      # Base model weights load into memory on first request-triggered call;
+      # give it room before the orchestrator starts flagging it unhealthy.
+      start_period: 60s
 
   finetune-service:
     build:
@@ -57,6 +65,12 @@ services:
       - "${FINETUNE_SERVICE_PORT}:8002"
     volumes:
       - alloy_adapters:/app/adapters
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
   judge-service:
     build:
@@ -66,6 +80,11 @@ services:
     env_file: .env
     ports:
       - "${JUDGE_SERVICE_PORT}:8003"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
   gateway:
     build:
@@ -77,13 +96,18 @@ services:
       postgres:
         condition: service_healthy
       rag-service:
-        condition: service_started
+        condition: service_healthy
       finetune-service:
-        condition: service_started
+        condition: service_healthy
       judge-service:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "${GATEWAY_PORT}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   dashboard:
     build:
@@ -92,7 +116,8 @@ services:
     restart: unless-stopped
     env_file: .env
     depends_on:
-      - gateway
+      gateway:
+        condition: service_healthy
     ports:
       - "${DASHBOARD_PORT}:3000"
 
