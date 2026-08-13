@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from app.db import init_pool
-from app.generation import generate_rag_answer
+from app.generation import generate_base_answer, generate_rag_answer
 from app.ingest import ingest_document
 from app.retrieval import build_context_block, retrieve_context
 
@@ -21,6 +21,18 @@ class QueryResponse(BaseModel):
     output_tokens: int
     cost_usd: float
     sources: list[str]
+
+
+class BaseQueryRequest(BaseModel):
+    question: str
+
+
+class BaseQueryResponse(BaseModel):
+    answer: str
+    latency_ms: int
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
 
 
 @app.on_event("startup")
@@ -62,3 +74,11 @@ def query(request: QueryRequest):
         cost_usd=result["cost_usd"],
         sources=[c["filename"] for c in chunks],
     )
+
+
+@app.post("/base-query", response_model=BaseQueryResponse)
+def base_query(request: BaseQueryRequest):
+    """Raw base model answer — no retrieval, no fine-tuning. Used by the gateway
+    as the third leg of the RAG vs fine-tuned vs base comparison."""
+    result = generate_base_answer(request.question)
+    return BaseQueryResponse(**result)

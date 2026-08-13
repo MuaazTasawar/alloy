@@ -17,6 +17,12 @@ Question: {question}
 
 Answer:"""
 
+BASE_PROMPT_TEMPLATE = """You are a helpful assistant. Answer the question as best you can.
+
+Question: {question}
+
+Answer:"""
+
 
 @lru_cache
 def get_generator():
@@ -25,9 +31,8 @@ def get_generator():
     return pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 
-def generate_rag_answer(question: str, context: str) -> dict:
+def _run_generation(prompt: str) -> dict:
     generator = get_generator()
-    prompt = RAG_PROMPT_TEMPLATE.format(context=context, question=question)
 
     start = time.perf_counter()
     output = generator(
@@ -53,3 +58,15 @@ def generate_rag_answer(question: str, context: str) -> dict:
         # Local open-weight inference: no per-token API cost.
         "cost_usd": 0.0,
     }
+
+
+def generate_rag_answer(question: str, context: str) -> dict:
+    prompt = RAG_PROMPT_TEMPLATE.format(context=context, question=question)
+    return _run_generation(prompt)
+
+
+def generate_base_answer(question: str) -> dict:
+    """No retrieval, no fine-tuning — the plain base model answering cold.
+    This is the third leg of the head-to-head comparison."""
+    prompt = BASE_PROMPT_TEMPLATE.format(question=question)
+    return _run_generation(prompt)
